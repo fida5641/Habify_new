@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:habify/features/tasks/tas_screen.dart';
 import 'package:habify/models/habit.dart';
@@ -45,9 +47,17 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             TextButton(
               onPressed: () {
-                _viewModel
-                    .markAsSkipped(habitIndex); // ✅ Uses habitIndex correctly
-                Navigator.of(context).pop();
+                final habitBox = Hive.box<Habit>('habits');
+                final habit = habitBox.getAt(habitIndex);
+
+                if (habit != null) {
+                  habit.status = 'skipped';
+                  habitBox.putAt(habitIndex, habit);
+
+                  setState(() {});
+
+                  Navigator.of(context).pop();
+                }
               },
               child: const Text('Yes'),
             ),
@@ -216,50 +226,66 @@ class _HomeScreenState extends State<HomeScreen> {
                                             color: Colors.grey,
                                           ),
                                     const SizedBox(width: 10),
-                                    Container(
-                                      width: 24,
-                                      height: 24,
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                          color: habit.isCompleted
-                                              ? Colors.green
-                                              : Colors.grey,
-                                          width: 2,
-                                        ),
-                                        borderRadius: BorderRadius.circular(4),
-                                        color: habit.isCompleted
-                                            ? Colors.green
-                                            : Colors.black,
-                                      ),
-                                      child: InkWell(
-                                        onTap: () async {
-                                          final isCompleted =
-                                              await Navigator.push<bool>(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => TaskScreen(
-                                                habit: habit,
-                                                habitIndex: habitIndex,
+                                    ValueListenableBuilder(
+                                        valueListenable:
+                                            Hive.box<Habit>('habits')
+                                                .listenable(),
+                                        builder: (context, Box<Habit> box, _) {
+                                          final updatedHabit = box.getAt(habitIndex);
+
+                                          if (updatedHabit == null) {
+                                            return SizedBox(); // Return an empty widget if habit is null
+                                          }
+
+                                          return Container(
+                                            width: 24,
+                                            height: 24,
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                color: habit.isCompleted
+                                                    ? Colors.green
+                                                    : Colors.grey,
+                                                width: 2,
                                               ),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                              color: habit.isCompleted
+                                                  ? Colors.green
+                                                  : Colors.black,
+                                            ),
+                                            child: InkWell(
+                                              onTap: () async {
+                                                final isCompleted =
+                                                    await Navigator.push<bool>(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        TaskScreen(
+                                                      habit: habit,
+                                                      habitIndex: habitIndex,
+                                                    ),
+                                                  ),
+                                                );
+                                                // ✅ Check if the task was completed and update UI
+                                                if (isCompleted != null) {
+                                                  updatedHabit.isCompleted =
+                                                      isCompleted;
+                                                  habit.status = isCompleted
+                                                      ? 'finished'
+                                                      : updatedHabit.status;
+                                                  box.putAt(habitIndex, habit);
+                                                }
+                                              },
+                                              child: updatedHabit.isCompleted
+                                                  ? const Icon(
+                                                      Icons.check,
+                                                      size: 18,
+                                                      color: Colors.white,
+                                                    )
+                                                  : null,
                                             ),
                                           );
-
-                                          // ✅ Check if the task was completed and update UI
-                                          if (isCompleted != null &&
-                                              isCompleted) {
-                                            _viewModel.updateHabitCompletion(
-                                                habitIndex, true);
-                                          }
-                                        },
-                                        child: habit.isCompleted
-                                            ? const Icon(
-                                                Icons.check,
-                                                size: 18,
-                                                color: Colors.white,
-                                              )
-                                            : null,
-                                      ),
-                                    ),
+                                        }),
                                   ],
                                 ),
                                 title: Text(
@@ -275,11 +301,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                                 subtitle: Text(
-                                  habit.isCompleted
-                                      ? 'Finished'
-                                      : (habit.status == 'skipped'
-                                          ? 'Skipped'
-                                          : ''),
+                                  habit.status == 'skipped'
+                                      ? 'Skipped'
+                                      : (habit.isCompleted ? 'Finished' : ''),
                                 ),
                                 trailing: PopupMenuButton<String>(
                                   color: Colors.black,

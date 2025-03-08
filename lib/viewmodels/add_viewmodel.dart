@@ -115,38 +115,38 @@ class AddHabitViewModel {
         const SnackBar(content: Text('Habit saved successfully!')));
   }
 
-Future<void> updateHabit(BuildContext context, int habitIndex) async {
-  final box = await Hive.openBox<Habit>('habits');
+  Future<void> updateHabit(BuildContext context, int habitIndex) async {
+    final box = await Hive.openBox<Habit>('habits');
 
-  if (habitIndex >= 0 && habitIndex < box.length) { // ✅ Prevents index error
-    final habitKey = box.keyAt(habitIndex); // ✅ Get correct key from Hive
+    if (habitIndex >= 0 && habitIndex < box.length) {
+      // ✅ Prevents index error
+      final habitKey = box.keyAt(habitIndex); // ✅ Get correct key from Hive
 
-    final updatedHabit = Habit(
-      name: selectedHabit.value!,
-      image: habitOptions.firstWhere(
-          (habit) => habit['name'] == selectedHabit.value,
-          orElse: () => {'image': 'assets/images/default.png'})['image']!,
-      target: int.tryParse(targetController.text) ?? 0,
-      days: selectedDays.value,
-      segment: groupValue.value,
-      selectedNumber: selectedNumber.value,
-      selectedOptions: selectedOptions.value, status: '',
-    );
+      final updatedHabit = Habit(
+        name: selectedHabit.value!,
+        image: habitOptions.firstWhere(
+            (habit) => habit['name'] == selectedHabit.value,
+            orElse: () => {'image': 'assets/images/default.png'})['image']!,
+        target: int.tryParse(targetController.text) ?? 0,
+        days: selectedDays.value,
+        segment: groupValue.value,
+        selectedNumber: selectedNumber.value,
+        selectedOptions: selectedOptions.value,
+        status: '',
+      );
 
-    await box.put(habitKey, updatedHabit); // ✅ Use correct key to update
+      await box.put(habitKey, updatedHabit); // ✅ Use correct key to update
 
-    isLoading.value = false;
-    Navigator.pushReplacementNamed(context, '/bottom_nav');
+      isLoading.value = false;
+      Navigator.pushReplacementNamed(context, '/bottom_nav');
 
-    ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Habit updated successfully!')));
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error: Habit does not exist!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Habit updated successfully!')));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: Habit does not exist!')));
+    }
   }
-}
-
-
 
   /// ✅ **Handle button action (Save or Update)**
   void handleHabitAction(BuildContext context, {int? habitIndex}) {
