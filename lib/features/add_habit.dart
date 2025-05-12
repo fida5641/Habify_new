@@ -75,6 +75,7 @@ void initState() {
               AppSpacing.medium,
               DoItAtSelector(
                   viewModel: _viewModel), // ✅ Added "Do It At" Selector
+                  AppSpacing.large,
 
               Center(
                 child: SubmitButton(

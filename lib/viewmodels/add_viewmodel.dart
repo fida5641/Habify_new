@@ -13,8 +13,7 @@ class AddHabitViewModel {
   final ValueNotifier<int> selectedNumber = ValueNotifier(1);
   final ValueNotifier<String> selectedOptions = ValueNotifier('Hours');
   final ValueNotifier<int> groupValue = ValueNotifier(0);
-  final ValueNotifier<String> selectedHabit =
-      ValueNotifier(''); // ✅ Non-nullable
+  final ValueNotifier<String> selectedHabit = ValueNotifier(''); // ✅ Non-nullable
 
   final List<String> daysOfWeek = [
     'Mon',
@@ -74,7 +73,7 @@ class AddHabitViewModel {
 
   /// ✅ **Save new habit**
   Future<void> saveHabit(BuildContext context) async {
-    if (selectedHabit.value.isEmpty || targetController.text.isEmpty) {
+    if (selectedHabit.value.isEmpty || targetController.text.isEmpty ) {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please fill all fields')));
       return;
@@ -86,6 +85,7 @@ class AddHabitViewModel {
           .showSnackBar(const SnackBar(content: Text('Invalid target number')));
       return;
     }
+    
 
     isLoading.value = true;
 

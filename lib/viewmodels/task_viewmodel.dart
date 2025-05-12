@@ -6,7 +6,7 @@ class TaskViewModel {
   final ValueNotifier<int> swipeCount = ValueNotifier(0);
   final ValueNotifier<bool> isCompleted = ValueNotifier(false);
   final ValueNotifier<int> currentStreak = ValueNotifier(0);
-  
+
   final Habit habit;
   final int habitIndex;
 
@@ -28,22 +28,21 @@ class TaskViewModel {
   }
 
   String getSegmentLabel(int segment) {
-  switch (segment) {
-    case 0:
-      return 'Any Time';
-    case 1:
-      return 'Morning';
-    case 2:
-      return 'Afternoon';
-    case 3:
-      return 'Evening';
-    case 4:
-      return 'Night';
-    default:
-      return 'Unknown';
+    switch (segment) {
+      case 0:
+        return 'Any Time';
+      case 1:
+        return 'Morning';
+      case 2:
+        return 'Afternoon';
+      case 3:
+        return 'Evening';
+      case 4:
+        return 'Night';
+      default:
+        return 'Unknown';
+    }
   }
-}
-
 
   Future<void> _saveCompletionStatus() async {
     final box = await Hive.openBox<Habit>('habits');

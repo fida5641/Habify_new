@@ -23,9 +23,12 @@ class ToggledButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SlideAction(
-      text: isCompleted
-          ? 'Completed!'
-          : '$label ($swipeCount/$maxSwipes)',
+      // child: Text('complete'),
+      // textStyle: TextStyle(color: Colors.white, fontSize: 30),
+
+      // textColor: Colors.white,
+      // text: isCompleted ? 'Completed!' : '$label ($swipeCount/$maxSwipes)',
+      // text: 'complete',
       outerColor: isCompleted ? Colors.green : Colors.grey[900],
       innerColor: isCompleted ? Colors.green : Colors.deepOrange,
       onSubmit: () {
@@ -38,8 +41,15 @@ class ToggledButton extends StatelessWidget {
         }
       },
       child: isCompleted
-          ? Lottie.asset('assets/success.json', width: 80, height: 100, repeat: false)
-          : const Icon(Icons.arrow_forward, color: Colors.white, size: 40),
+          ? Lottie.asset('assets/success.json',
+              width: 80, height: 100, repeat: false)
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(label),
+                Icon(Icons.arrow_forward, color: Colors.white, size: 40),
+              ],
+            ),
     );
   }
 }

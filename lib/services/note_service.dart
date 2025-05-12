@@ -19,19 +19,20 @@ class NoteService {
   Future<void> addNote(CustomNote note) async {
     final box = Hive.box<CustomNote>('notes');
     await box.add(note);
+    notes.value = box.values.toList();
     // loadNotes(); // Refresh UI
   }
 
-  // Future<void> loadNotes() async {
-  //   await _openBox();
-  //   final box = Hive.box<CustomNote>('notes');
-  //   notes.value = box.values.toList();
-  // }
+  Future<void> loadNotes() async {
+    await _openBox();
+    final box = Hive.box<CustomNote>('notes');
+    notes.value = box.values.toList();
+  }
 
   Future<void> updateNote(int index, CustomNote updatedNote) async {
     final box = Hive.box<CustomNote>('notes');
     await box.putAt(index, updatedNote);
-    // loadNotes(); // Refresh UI
+    loadNotes(); // Refresh UI
   }
 
   Future<void> deleteAllNotes() async {

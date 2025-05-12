@@ -14,14 +14,14 @@ class BottomNavViewModel {
 
   final List<Widget> pages;
 
-  BottomNavViewModel( this.username)
+  BottomNavViewModel(this.username)
       : _noteService = NoteService(),
         pages = [
           HomeScreen(username: username, taskCompletionPercentage: 0.0),
-            ChartScreen(),
-           AddScreen(username: username),
-           ProgressScreen(),
-           ProfileScreen(username: username),
+          ChartScreen(),
+          AddScreen(username: username),
+          ProgressScreen(),
+          ProfileScreen(username: username),
         ];
 
   void changeTab(int index) {
@@ -70,48 +70,54 @@ class BottomNavViewModel {
     TextEditingController titleController = TextEditingController();
     TextEditingController contentController = TextEditingController();
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Add Note'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(labelText: 'Title'),
+
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Add Note'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(labelText: 'Title'),
+                ),
+                TextField(
+                  controller: contentController,
+                  decoration: const InputDecoration(labelText: 'Content'),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('Cancel'),
               ),
-              TextField(
-                controller: contentController,
-                decoration: const InputDecoration(labelText: 'Content'),
+              TextButton(
+                onPressed: () async {
+                  String title = titleController.text.trim();
+                  String content = contentController.text.trim();
+
+                  if (title.isEmpty && content.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('please fill all fields'))
+                    );
+                    return;
+                  }
+                  CustomNote note = CustomNote(title: title, content: content);
+                  await _noteService.addNote(note);
+
+                  Navigator.pop(context);
+                },
+                child: const Text('Save'),
               ),
             ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                String title = titleController.text.trim();
-                String content = contentController.text.trim();
-
-                if (title.isNotEmpty && content.isNotEmpty) {
-                  CustomNote note = CustomNote(title: title, content: content);
-                  await _noteService.addNote(
-                      note); // ✅ Ensure _noteService is passed as a parameter
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
+          );
+        },
+      );
+    }
   }
-}
+

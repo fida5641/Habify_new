@@ -10,6 +10,34 @@ class HomeViewModel {
   final ValueNotifier<Box<CustomNote>> noteBox =
       ValueNotifier(Hive.box<CustomNote>('notes'));
 
+  // Track loading state
+  final ValueNotifier<bool> isLoading = ValueNotifier(false);
+
+  // Track error states
+  final ValueNotifier<String?> errorMessage = ValueNotifier(null);
+
+  HomeViewModel() {
+    // Initialize data on creation
+    _initializeNotes();
+  }
+
+  Future<void> _initializeNotes() async {
+    isLoading.value = true;
+    try {
+      final box = await Hive.openBox<CustomNote>('notes');
+
+      // Make noteBox reactive to changes
+      noteBox.value = box;
+      box.listenable().addListener(() {
+        noteBox.notifyListeners(); // ✅ Auto update UI on changes
+      });
+    } catch (e) {
+      errorMessage.value = "Failed to load notes: $e";
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   String getGreeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) return "Good morning! Ready to conquer the day?";
@@ -18,90 +46,138 @@ class HomeViewModel {
   }
 
   Future<void> loadHabits() async {
-    final box =
-        await Hive.openBox<Habit>('habits'); // ✅ Open box before using it
+    final box = await Hive.openBox<Habit>('habits');
     if (box.isEmpty) {
-      print("Habit Box is empty!"); // ✅ Debugging log
+      print("Habit Box is empty!");
     } else {
       print("Loaded ${box.length} habits");
     }
+
+    // Ensure our valueNotifier is updated
+    habitBox.value = box;
+    habitBox.notifyListeners();
   }
 
   void updateHabitCompletion(int index, bool isCompleted) async {
-    final box = await Hive.openBox<Habit>('habits');
+    isLoading.value = true;
 
-    if (index >= 0 && index < box.length) {
-      final habit = box.getAt(index);
-      if (habit != null) {
-        habit.isCompleted = isCompleted;
-        await box.putAt(index, habit); // ✅ Save the updated habit
+    try {
+      final box = await Hive.openBox<Habit>('habits');
 
-        habitBox.value = box;
-        habitBox.notifyListeners();
+      if (index >= 0 && index < box.length) {
+        final habit = box.getAt(index);
+        if (habit != null) {
+          habit.isCompleted = isCompleted;
+          await box.putAt(index, habit);
+
+          habitBox.value = box;
+          habitBox.notifyListeners();
+        }
       }
+    } catch (e) {
+      errorMessage.value = "Failed to update habit: $e";
+    } finally {
+      isLoading.value = false;
     }
   }
 
   void markAsSkipped(int habitIndex) async {
-    final box = await Hive.openBox<Habit>('habits');
+    isLoading.value = true;
 
-    if (habitIndex >= 0 && habitIndex < box.length) {
-      final habit = box.getAt(habitIndex);
+    try {
+      final box = await Hive.openBox<Habit>('habits');
 
-      if (habit != null) {
-        habit.status = 'Skipped'; // ✅ Update habit status
-        await box.putAt(habitIndex, habit); // ✅ Save updated habit
+      if (habitIndex >= 0 && habitIndex < box.length) {
+        final habit = box.getAt(habitIndex);
 
-        // ✅ Show confirmation message
-        if (navigatorKey.currentContext != null) {
-          ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
-            const SnackBar(content: Text('Habit marked as Skipped')),
-          );
+        if (habit != null) {
+          habit.status = 'skipped';
+          await box.putAt(habitIndex, habit);
+
+          // Show confirmation message
+          if (navigatorKey.currentContext != null) {
+            ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+              const SnackBar(content: Text('Habit marked as Skipped')),
+            );
+          }
+
+          habitBox.value = box;
+          habitBox.notifyListeners();
         }
-
-        habitBox.value = Hive.box<Habit>('habits');
-        habitBox.notifyListeners();
       }
+    } catch (e) {
+      errorMessage.value = "Failed to mark habit as skipped: $e";
+    } finally {
+      isLoading.value = false;
     }
   }
 
   void deleteHabit(int habitIndex) async {
-    final box = await Hive.openBox<Habit>('habits');
+    isLoading.value = true;
 
-    if (habitIndex >= 0 && habitIndex < box.length) {
-      // ✅ Prevents index error
-      await box.deleteAt(habitIndex); // ✅ Delete from Hive
-      habitBox.value = Hive.box<Habit>('habits');
-      habitBox.notifyListeners();
+    try {
+      final box = await Hive.openBox<Habit>('habits');
+
+      if (habitIndex >= 0 && habitIndex < box.length) {
+        await box.deleteAt(habitIndex);
+
+        // habitBox.value = box;
+        habitBox.notifyListeners();
+      }
+
+      // Show confirmation message
+      if (navigatorKey.currentContext != null) {
+        ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+          const SnackBar(content: Text('Habit deleted successfully!')),
+        );
+      }
+    } catch (e) {
+      errorMessage.value = "Failed to delete habit: $e";
+    } finally {
+      isLoading.value = false;
     }
-
-    // ✅ Show confirmation message
-    ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
-      const SnackBar(content: Text('Habit deleted successfully!')),
-    );
   }
 
-  void deleteNote(int noteIndex) async {
-    final box = await Hive.openBox<CustomNote>('notes');
+  Future<void> addNote(CustomNote note) async {
+    isLoading.value = true;
+    try {
+      final box = await Hive.openBox<CustomNote>('notes');
+      await box.add(note);
 
-    if (noteIndex >= 0 && noteIndex < box.length) {
-      // ✅ Prevents index error
-      await box.deleteAt(noteIndex); // ✅ Delete from Hive
-      noteBox.value = Hive.box<CustomNote>('notes'); // ✅ Reassign to notify UI
-      noteBox.notifyListeners(); // ✅ Force UI refresh
+      // Update noteBox value and notify listeners
+      noteBox.value = box;
+      noteBox.notifyListeners(); // ✅ Forces UI update
+    } catch (e) {
+      errorMessage.value = "Failed to add note: $e";
+    } finally {
+      isLoading.value = false;
     }
-
-    // ✅ Show confirmation message
-    ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
-      const SnackBar(content: Text('Note deleted successfully!')),
-    );
   }
 
-  // void markAsSkipped(int index) {
-  //   final habit = habitBox.value.getAt(index);
-  //   if (habit != null) {
-  //     habit.status = 'skipped';
-  //     habitBox.value.putAt(index, habit);
-  //   }
-  // }
+  Future<void> deleteNote(int noteIndex) async {
+    isLoading.value = true;
+    try {
+      final box = await Hive.openBox<CustomNote>('notes');
+
+      if (noteIndex >= 0 && noteIndex < box.length) {
+        await box.deleteAt(noteIndex);
+
+        // Update noteBox value and notify listeners
+        noteBox.value = box;
+        noteBox.notifyListeners(); // ✅ Forces UI update
+      }
+
+      // Show confirmation message
+      final context = navigatorKey.currentContext;
+      if (context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Note deleted successfully!')),
+        );
+      }
+    } catch (e) {
+      errorMessage.value = "Failed to delete note: $e";
+    } finally {
+      isLoading.value = false;
+    }
+  }
 }
